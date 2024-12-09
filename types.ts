@@ -12,6 +12,7 @@ export interface Prompt {
   title: string;
   blocks: Block[];
   lastUsed: Date;
+  lastEdited: Date;
   categoryId: string;
 }
 
@@ -21,4 +22,3 @@ export interface Category {
   prompts: Prompt[];
   isExpanded?: boolean;
 }
-
