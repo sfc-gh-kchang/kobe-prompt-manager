@@ -1,4 +1,10 @@
-export type BlockType = "text" | "example" | "input";
+// types.ts - Update BlockType and Block interface
+export type BlockType = "text" | "example" | "input" | "timestamp";
+
+export interface TimestampBlockData {
+  baseTimestamp: string; // ISO string
+  minutesBack: number;
+}
 
 export interface Block {
   id: string;
@@ -6,6 +12,7 @@ export interface Block {
   content: string;
   description?: string;
   order: number;
+  timestampData?: TimestampBlockData;
 }
 
 export interface Version {

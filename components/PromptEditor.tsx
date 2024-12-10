@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Prompt, Block, Version } from "../types";
+import { Prompt, Block, Version, BlockType } from "../types";
 import {
   Copy,
   Edit2,
@@ -175,13 +175,20 @@ const PromptEditor: React.FC<PromptEditorProps> = ({
     }
   };
 
-  const handleAddBlock = (type: "text" | "example" | "input") => {
+  const handleAddBlock = (type: BlockType) => {
     const newBlock: Block = {
       id: `block-${Date.now()}`,
       type,
       content: "",
       description: type === "input" ? "" : undefined,
       order: currentVersion.blocks.length,
+      timestampData:
+        type === "timestamp"
+          ? {
+              baseTimestamp: "2024-10-29T00:00",
+              minutesBack: 5,
+            }
+          : undefined,
     };
     setCurrentVersion({
       ...currentVersion,
@@ -222,6 +229,19 @@ const PromptEditor: React.FC<PromptEditorProps> = ({
     } catch (err) {
       console.error("Failed to copy feedback prompt:", err);
     }
+  };
+
+  const handleDeleteBlock = (blockId: string) => {
+    if (!currentVersion) return;
+
+    const updatedBlocks = currentVersion.blocks
+      .filter((block) => block.id !== blockId)
+      .map((block, index) => ({
+        ...block,
+        order: index, // Update order after deletion
+      }));
+
+    setCurrentVersion({ ...currentVersion, blocks: updatedBlocks });
   };
 
   return (
@@ -341,6 +361,7 @@ const PromptEditor: React.FC<PromptEditorProps> = ({
                 isEditing={isEditing}
                 onUpdate={handleBlockUpdate}
                 onReorder={handleBlockReorder}
+                onDelete={handleDeleteBlock}
                 index={index}
               />
             ))}
@@ -432,7 +453,7 @@ const PromptEditor: React.FC<PromptEditorProps> = ({
             left: addBlockButtonRef.current?.offsetLeft,
           }}
         >
-          {["text", "example", "input"].map((type) => (
+          {["text", "example", "input", "timestamp"].map((type) => (
             <button
               key={type}
               onClick={() => handleAddBlock(type as any)}

@@ -1,12 +1,21 @@
 import React, { useRef, useEffect } from "react";
 import { Block } from "../types";
-import { GripVertical, AlignLeft, Code, Type } from "lucide-react";
+import {
+  GripVertical,
+  AlignLeft,
+  Code,
+  Type,
+  Clock,
+  Trash2,
+} from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
+import TimestampBlock from "./TimestampBlock";
 
 interface BlockProps {
   block: Block;
   isEditing: boolean;
   onUpdate: (updatedBlock: Block) => void;
+  onDelete: (blockId: string) => void; // New prop
   onReorder: (draggedId: string, targetId: string) => void;
   index: number;
 }
@@ -15,6 +24,7 @@ const BlockComponent: React.FC<BlockProps> = ({
   block,
   isEditing,
   onUpdate,
+  onDelete,
   onReorder,
   index,
 }) => {
@@ -98,6 +108,11 @@ const BlockComponent: React.FC<BlockProps> = ({
         <Type size={12} className="text-white" />
       </div>
     ),
+    timestamp: (
+      <div className="w-4 h-4 bg-gradient-to-r from-purple-400 to-pink-500 rounded-sm flex items-center justify-center">
+        <Clock size={12} className="text-white" />
+      </div>
+    ),
   };
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -155,6 +170,16 @@ const BlockComponent: React.FC<BlockProps> = ({
       );
     }
 
+    if (block.type === "timestamp") {
+      return (
+        <TimestampBlock
+          block={block}
+          isEditing={isEditing}
+          onUpdate={onUpdate}
+        />
+      );
+    }
+
     // Show textarea in edit mode, div in view mode for non-input blocks
     return isEditing ? (
       <textarea
@@ -205,10 +230,25 @@ const BlockComponent: React.FC<BlockProps> = ({
         theme === "dark" ? "bg-zinc-900 text-white" : "bg-white text-black"
       } border border-gray-700 transition-all duration-200 ease-in-out`}
     >
-      <div className="flex items-center mb-2 text-gray-400">
-        {isEditing && <GripVertical size={16} className="cursor-move mr-2" />}
-        {blockIcons[block.type]}
-        <span className="text-xs uppercase ml-2">{block.type}</span>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center text-gray-400">
+          {isEditing && <GripVertical size={16} className="cursor-move mr-2" />}
+          {blockIcons[block.type]}
+          <span className="text-xs uppercase ml-2">{block.type}</span>
+        </div>
+        {isEditing && (
+          <button
+            onClick={() => onDelete(block.id)}
+            className={`p-1 rounded-md transition-colors ${
+              theme === "dark"
+                ? "text-red-500 hover:bg-red-500/10"
+                : "text-red-600 hover:bg-red-100"
+            }`}
+            title="Delete Block"
+          >
+            <Trash2 size={16} />
+          </button>
+        )}
       </div>
       {renderContent()}
     </div>
