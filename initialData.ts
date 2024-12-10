@@ -1,4 +1,4 @@
-import { Category } from "./types";
+import { Block, Category } from "./types";
 
 export interface Prompt {
   id: string;
@@ -66,4 +66,3 @@ export const initialCategories: Category[] = [
     ],
   },
 ];
-
