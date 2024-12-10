@@ -2,11 +2,11 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Category, Prompt } from "../types";
-import Sidebar from "../components/Sidebar";
+import { Category, Prompt, Version } from "../types";
 import PromptEditor from "../components/PromptEditor";
 import { initialCategories } from "../initialData";
 import { usePersistedCategories } from "../hooks/useLocalStorage";
+import Sidebar from "@/components/Sidebar";
 
 export default function Page() {
   // Use null as initial state to prevent hydration mismatch
@@ -36,16 +36,16 @@ export default function Page() {
   };
 
   const handleUpdatePrompt = (updatedPrompt: Prompt) => {
+    console.log("handleUpdatePrompt called with:", updatedPrompt);
     if (!selectedPrompt) return;
+
     setDraftCategories(
       draftCategories.map((category) =>
         category.id === selectedPrompt.categoryId
           ? {
               ...category,
               prompts: category.prompts.map((prompt) =>
-                prompt.id === selectedPrompt.promptId
-                  ? { ...updatedPrompt, lastEdited: new Date() }
-                  : prompt
+                prompt.id === selectedPrompt.promptId ? updatedPrompt : prompt
               ),
             }
           : category
@@ -53,18 +53,58 @@ export default function Page() {
     );
   };
 
-  const handleSavePrompt = () => {
-    saveCategories(draftCategories);
+  const handleSavePrompt = (currentVersion: Version) => {
+    console.log("handleSavePrompt called");
+    const currentPrompt = getSelectedPromptData();
+    console.log("Current prompt data:", currentPrompt);
+    if (!currentPrompt || !selectedPrompt) return;
+
+    // Instead of copying the latest version from the stored prompt,
+    // we need to get the actively edited version from the PromptEditor
+    const newVersion = {
+      id: `v${Date.now()}`,
+      versionNumber: currentPrompt.versions.length + 1,
+      // We need the PromptEditor to pass us the current edited state
+      title: currentVersion.title,
+      blocks: currentVersion.blocks,
+      lastEdited: new Date(),
+    };
+    console.log("New version created:", newVersion);
+
+    const updatedPrompt = {
+      ...currentPrompt,
+      versions: [...currentPrompt.versions, newVersion],
+    };
+
+    const updatedCategories = draftCategories.map((category) =>
+      category.id === selectedPrompt.categoryId
+        ? {
+            ...category,
+            prompts: category.prompts.map((prompt) =>
+              prompt.id === selectedPrompt.promptId ? updatedPrompt : prompt
+            ),
+          }
+        : category
+    );
+
+    setDraftCategories(updatedCategories);
+    saveCategories(updatedCategories);
     setIsEditing(false);
   };
 
   const handleCreateNewPrompt = () => {
     const newPrompt: Prompt = {
       id: `p${Date.now()}`,
-      title: "New Prompt",
-      blocks: [],
+      versions: [
+        {
+          id: `v${Date.now()}`,
+          versionNumber: 1,
+          title: "New Prompt",
+          blocks: [],
+          lastEdited: new Date(),
+        },
+      ],
       lastUsed: new Date(),
-      lastEdited: new Date(),
       categoryId: draftCategories[0].id,
     };
 
@@ -84,7 +124,6 @@ export default function Page() {
     });
     setIsEditing(true);
   };
-
   const handleBuildAndCopyPrompt = (promptId: string) => {
     const updatedCategories = draftCategories.map((category) =>
       category.prompts.some((prompt) => prompt.id === promptId)
@@ -155,7 +194,8 @@ export default function Page() {
         onUpdatePrompt={handleUpdatePrompt}
         onBuildAndCopyPrompt={handleBuildAndCopyPrompt}
         onDeletePrompt={handleDeletePrompt}
-        onSave={handleSavePrompt}
+        onSave={(currentVersion) => handleSavePrompt(currentVersion)}
+        onCreateNewPrompt={handleCreateNewPrompt}
       />
     </div>
   );

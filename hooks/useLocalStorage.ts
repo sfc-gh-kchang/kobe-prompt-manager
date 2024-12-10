@@ -1,6 +1,26 @@
-// hooks/useLocalStorage.ts
 import { useState, useEffect } from "react";
-import { Category, Prompt } from "../types";
+import { Category, Prompt, Version } from "../types";
+
+const isValidVersionArray = (versions: any[]): versions is Version[] => {
+  return versions.every(
+    (version) =>
+      typeof version === "object" &&
+      version !== null &&
+      typeof version.id === "string" &&
+      typeof version.versionNumber === "number" &&
+      typeof version.title === "string" &&
+      Array.isArray(version.blocks) &&
+      version.blocks.every(
+        (block: any) =>
+          typeof block === "object" &&
+          block !== null &&
+          typeof block.id === "string" &&
+          typeof block.type === "string" &&
+          typeof block.content === "string" &&
+          typeof block.order === "number"
+      )
+  );
+};
 
 const isValidCategoryArray = (data: any): data is Category[] => {
   if (!Array.isArray(data)) return false;
@@ -10,20 +30,26 @@ const isValidCategoryArray = (data: any): data is Category[] => {
     if (!category.id || !category.title || !Array.isArray(category.prompts))
       return false;
 
-    return category.prompts.every((prompt: Prompt) => {
-      if (!prompt.id || !prompt.title || !Array.isArray(prompt.blocks))
-        return false;
-      return true;
-    });
+    return category.prompts.every(
+      (prompt: any) =>
+        typeof prompt === "object" &&
+        prompt !== null &&
+        typeof prompt.id === "string" &&
+        Array.isArray(prompt.versions) &&
+        isValidVersionArray(prompt.versions)
+    );
   });
 };
 
 export const usePersistedCategories = () => {
-  // Initialize with empty array to prevent hydration mismatch
   const [categories, setCategories] = useState<Category[]>([]);
 
   // Load data after component mounts
   useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = () => {
     try {
       const stored = localStorage.getItem("promptCategories");
       if (stored) {
@@ -34,7 +60,10 @@ export const usePersistedCategories = () => {
             prompts: category.prompts.map((prompt) => ({
               ...prompt,
               lastUsed: new Date(prompt.lastUsed),
-              lastEdited: new Date(prompt.lastEdited),
+              versions: prompt.versions.map((version: any) => ({
+                ...version,
+                lastEdited: new Date(version.lastEdited),
+              })),
             })),
           }));
           setCategories(processedCategories);
@@ -43,7 +72,7 @@ export const usePersistedCategories = () => {
     } catch (error) {
       console.error("Failed to load categories:", error);
     }
-  }, []); // Run only once on mount
+  };
 
   const saveCategories = (newCategories: Category[]) => {
     try {
@@ -52,7 +81,10 @@ export const usePersistedCategories = () => {
         prompts: category.prompts.map((prompt) => ({
           ...prompt,
           lastUsed: prompt.lastUsed.toISOString(),
-          lastEdited: prompt.lastEdited.toISOString(),
+          versions: prompt.versions.map((version) => ({
+            ...version,
+            lastEdited: version.lastEdited.toISOString(),
+          })),
         })),
       }));
 
@@ -63,5 +95,15 @@ export const usePersistedCategories = () => {
     }
   };
 
-  return { categories, saveCategories };
+  const clearStorage = () => {
+    try {
+      localStorage.removeItem("promptCategories");
+      setCategories([]);
+      console.log("Local storage cleared successfully");
+    } catch (error) {
+      console.error("Failed to clear storage:", error);
+    }
+  };
+
+  return { categories, saveCategories, clearStorage, loadCategories };
 };

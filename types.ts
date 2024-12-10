@@ -4,15 +4,22 @@ export interface Block {
   id: string;
   type: BlockType;
   content: string;
+  description?: string;
   order: number;
+}
+
+export interface Version {
+  id: string;
+  versionNumber: number;
+  title: string;
+  blocks: Block[];
+  lastEdited: Date;
 }
 
 export interface Prompt {
   id: string;
-  title: string;
-  blocks: Block[];
+  versions: Version[];
   lastUsed: Date;
-  lastEdited: Date;
   categoryId: string;
 }
 
