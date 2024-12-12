@@ -19,8 +19,18 @@ const TimestampBlock: React.FC<TimestampBlockProps> = ({
     block.timestampData?.minutesBack || 5
   );
   const [baseTimestamp, setBaseTimestamp] = useState(
-    block.timestampData?.baseTimestamp || "2024-10-29T00:00"
+    block.timestampData?.baseTimestamp || "2024-12-10T11:05"
   );
+
+  function formatTimestamp(dateString: string): string {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day} ${hours}:${minutes}:00`;
+  }
 
   useEffect(() => {
     updateBlock();
@@ -30,7 +40,11 @@ const TimestampBlock: React.FC<TimestampBlockProps> = ({
     const baseDate = new Date(baseTimestamp);
     const earlierDate = new Date(baseDate.getTime() - minutesBack * 60000);
 
-    const content = `From ${earlierDate.toISOString()} to ${baseDate.toISOString()}`;
+    // Format timestamps in the desired format
+    const formattedBase = formatTimestamp(baseDate.toISOString());
+    const formattedEarlier = formatTimestamp(earlierDate.toISOString());
+
+    const content = `From ${formattedEarlier} to ${formattedBase}`;
 
     onUpdate({
       ...block,
